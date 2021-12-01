@@ -231,6 +231,8 @@
                 <a target="_blank" :href="row.mini_mcm_link">{{row.mini}}</a>
                 <a :href="row.mini_stats_link" target="_blank" title="Open in Stats&#178;"> <img src="stats2.png" style="width: 16px;"> </a>
                 <small v-if="row.mini_completed_events < row.nano_completed_events" style="color:orange"><br>Deficit of {{(row.nano_completed_events - row.mini_completed_events).toLocaleString('en-US')}} events</small>
+                <small v-if="row.mini_process_string.length" style="color: blueviolet"><br>{{row.mini_process_string}}</small>
+                <small v-else style="color: blue"><br>Standard Digitalisation</small>
               </div>
             </td>
             <td v-if="row.rowspan.mini" :rowspan="row.rowspan.mini" :class="row.mini_status + '-background'">{{row.mini_status}}

@@ -84,6 +84,7 @@ def make_row(ds, root, mini, nano):
             'mini_total_events': mini['total_events'] if mini else 0,
             'mini_completed_events': mini['completed_events'] if mini else 0,
             'mini_workflow': mini.get('workflow') if mini else None,
+            'mini_process_string': mini['process_string'] if mini else '',
             'nano': nano['prepid'] if nano else '',
             'nano_status': nano['status'] if nano else '',
             'nano_total_events': nano['total_events'] if nano else 0,
@@ -155,6 +156,9 @@ for ds_i, ds_name in enumerate(datasets):
                 for req_family in chained_request['chain']:
                     if 'MiniAOD' in req_family:
                         mini = mcm_get('requests', req_family)
+                        mini_dict = json.loads(mcm._McM__get('public/restapi/requests/get_dict/%s' % (mini['prepid'])))
+                        process_string = mini_dict['ProcessingString'].split(mini_dict['GlobalTag'])[0].strip('_')
+                        mini['process_string'] = process_string
                         add_workflow(mini)
                     elif 'NanoAOD' in req_family:
                         nano = mcm_get('requests', req_family)
