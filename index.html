@@ -1,0 +1,488 @@
+
+<html>
+  <head>
+    <title>VFS MC samples</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <link rel="icon" type="image/png" href="pdmv.png" />
+    <style>
+      body {
+        background: #fafafa;
+      }
+      td, th {
+        border: 1px #aaa solid;
+        padding: 2px 4px;
+        font-size: 0.9em;
+        text-align: center;
+        white-space: nowrap;
+      }
+      th {
+        text-align: center;
+        background: #eee;
+      }
+      tr {
+        height: 30px;
+        background: white;
+      }
+      table {
+        margin-left: auto;
+        margin-right: auto;
+        margin-bottom: 40px;
+        margin-top: 20px;
+        border-collapse: collapse;
+      }
+      .sort {
+        cursor: pointer;
+      }
+      input {
+        width: 98%;
+        margin: auto;
+        margin-bottom: 2px;
+        border: 1px solid black;
+        padding-left: 4px;
+        padding-right: 4px;
+      }
+      .sorted-by {
+        background: #c8c8c8;
+      }
+      a {
+        color: #005eb6;
+      }
+
+      .done-background {
+        background-color: rgba(30, 150, 30, 0.18);
+      }
+      .submitted-background {
+        background-color: rgba(0, 90, 255, 0.18);
+      }
+      .approved-background {
+        background-color: rgba(240, 120, 0, 0.33);
+      }
+      .defined-background {
+        background-color: rgba(220, 220, 0, 0.43);
+      }
+      .validation-background {
+        background-color: rgba(255, 0, 255, 0.23);
+      }
+      .new-background {
+        background-color: rgba(0, 0, 0, 0.1);
+      }
+      .not_exist-background {
+        background-color: #e74c3c;
+        color: white;
+        animation-name: not-exist-pulse;
+        animation-duration: 2s;
+        animation-iteration-count: infinite;
+      }
+
+      @keyframes not-exist-pulse {
+        0% {
+          color: #e74c3c;
+          background-color: white;
+        }
+        50% {
+          color: white;
+          background-color: #e74c3c;
+        }
+        100% {
+          color: #e74c3c;
+          background-color: white;
+        }
+      }
+      .high-fraction{
+        color: green;
+      }
+      .medium-fraction{
+        color: orange;
+      }
+      .low-fraction{
+        color: red;
+      }
+
+      .logo {
+        text-align: center;
+        padding: 8px;
+        margin-top: 20px;
+      }
+
+      .elevation {
+        -webkit-box-shadow: 0 3px 3px -2px rgba(0,0,0,.2),0 3px 4px 0 rgba(0,0,0,.14),0 1px 8px 0 rgba(0,0,0,.12)!important;
+        box-shadow: 0 3px 3px -2px rgba(0,0,0,.2),0 3px 4px 0 rgba(0,0,0,.14),0 1px 8px 0 rgba(0,0,0,.12)!important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div class="logo">
+        <a href="https://cms-pdmv.cern.ch/home/" target="_blank"> <img src="logo_cropped.png" style="width: 200px;"> </a>
+      </div>
+      <h3 style="text-align: center;">VFS MC Samples</h3>
+      <small style="text-align: center; margin-top: -12px; display: block"><i>proudly made by Jordan Martins</i></small>
+      <div style="text-align:center;">
+        <a href="https://pdmv-pages.web.cern.ch/">PdmV pages</a>
+      </div>
+      <div style="text-align: center; margin: 8px;">
+        Updated: {{lastUpdate}}
+      </div>
+      <!-- Put sum here as well -->
+
+      <table class="elevation">
+        <tr>
+          <th></th>
+          <th :class="sortOn == 'dataset' ? 'sorted-by' : ''">
+            <span class="sort" @click="onSort('dataset')">
+              Dataset
+            </span>
+            <br>
+            <input type="text" class="header-search" placeholder="Type to search..." v-model="search.dataset" @input="onSearch()">
+          </th>
+          <th :class="sortOn == 'root_prepid' ? 'sorted-by' : ''">
+            <span class="sort" @click="onSort('root_prepid')">
+              Root PrepID
+            </span>
+            <br>
+            <input type="text" class="header-search" placeholder="Type to search..." v-model="search.root_prepid" @input="onSearch()">
+          </th>
+          <th :class="sortOn == 'status' ? 'sorted-by' : ''">
+            <span class="sort" @click="onSort('status')">
+              Root Status
+            </span>
+            <br><small>Status | Priority | Type</small>
+            <br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.status" @input="onSearch()">
+          </th>
+          <th :class="sortOn == 'mini' ? 'sorted-by' : ''">
+            <span class="sort" @click="onSort('mini')">
+              Mini PrepID
+            </span>
+            <br>
+            <input type="text" class="header-search" placeholder="Type to search..." v-model="search.mini" @input="onSearch()">
+          </th>
+          <th :class="sortOn == 'mini_status' ? 'sorted-by' : ''">
+            <span class="sort" @click="onSort('mini_status')">
+              Mini Status
+            </span>
+            <br><small>Status | Priority | Type</small>
+          </th>
+          <th :class="(sortOn == 'mini_completed_events' || sortOn == 'mini_fraction') ? 'sorted-by' : ''">
+            <span class="sort" @click="onSort('mini_completed_events')">
+              Mini Completed Events
+            </span>
+            <br><small class="sort" @click="onSort('mini_fraction')">Fraction</small>
+          </th>
+          <th :class="sortOn == 'nano' ? 'sorted-by' : ''">
+            <span class="sort" @click="onSort('nano')">
+              Nano PrepID
+            </span>
+            <br>
+            <input type="text" class="header-search" placeholder="Type to search..." v-model="search.nano" @input="onSearch()">
+          </th>
+          <th :class="sortOn == 'nano_status' ? 'sorted-by' : ''">
+            <span class="sort" @click="onSort('nano_status')">
+              Nano Status
+            </span>
+            <br><small>Status | Priority | Type</small>
+          </th>
+          <th :class="(sortOn == 'nano_completed_events' || sortOn == 'nano_fraction') ? 'sorted-by' : ''">
+            <span class="sort" @click="onSort('nano_completed_events')">
+              Nano Completed Events
+            </span>
+            <br><small class="sort" @click="onSort('nano_fraction')">Fraction</small>
+          </th>
+        </tr>
+        <tbody>
+          <tr>
+            <td colspan="4">
+              <b>SUM</b>
+            </td>
+            <td colspan="3">
+              <b>{{sumMini.toLocaleString('en-US')}}</b>
+            </td>
+            <td colspan="3">
+              <b>{{sumNano.toLocaleString('en-US')}}</b>
+            </td>
+          </tr>
+          <tr v-for="(row, $index) in rows">
+            <td>{{$index + 1}}.</td>
+            <td v-if="row.rowspan.dataset" :rowspan="row.rowspan.dataset">
+              {{row.dataset}}
+              <small v-if="row.campaign_count == 0" style="color:red"><br>No requests</small>
+              <!-- 
+              <small v-else-if="row.campaign_count < 4" style="color:red"><br>Missing {{4-row.campaign_count}} PWG&#x2715;Campaign(s)</small>
+              <small v-else-if="row.campaign_count > 4" style="color:red"><br>Surplus {{row.campaign_count-4}} PWG&#x2715;Campaign(s)</small>
+              <small v-if="row.pwg_count > 1" style="color:orange"><br>Mix of {{row.pwg_count}} PWG</small>
+              -->
+            </td>
+            <td v-if="row.rowspan.root_prepid" :rowspan="row.rowspan.root_prepid">
+              <div v-if="row.root_prepid.length">
+                <a target="_blank" :href="row.root_mcm_link">{{row.root_prepid}}</a>
+                <a :href="row.root_stats_link" target="_blank" title="Open in Stats&#178;"> <img src="stats2.png" style="width: 16px;"> </a>
+                <small v-if="row.root_duplicate_of.length" style="color:red"><br>Duplicate of {{row.root_duplicate_of}}</small>
+                <small v-if="row.root_extension" style="color:green"><br>Extension {{row.root_extension}}</small>
+              </div>
+            </td>
+            <td v-if="row.rowspan.root_prepid" :rowspan="row.rowspan.root_prepid" :class="row.status + '-background'">{{row.status}}
+              <small v-if="row.root_workflow"><br>
+                <a v-if="row.root_workflow.last_status == 'staging'" :href="row.root_transferor_link" target="_blank">{{row.root_workflow.last_status}}</a>
+                <span v-if="row.root_workflow.last_status != 'staging'">{{row.root_workflow.last_status}}</span> since {{row.root_last_status_time_nice}} | {{row.root_workflow.priority}} | {{row.root_workflow.type}}</small>
+            </td>
+            <td v-if="row.rowspan.mini" :rowspan="row.rowspan.mini">
+              <div v-if="row.mini.length">
+                <a target="_blank" :href="row.mini_mcm_link">{{row.mini}}</a>
+                <a :href="row.mini_stats_link" target="_blank" title="Open in Stats&#178;"> <img src="stats2.png" style="width: 16px;"> </a>
+                <small v-if="row.mini_completed_events < row.nano_completed_events" style="color:orange"><br>Deficit of {{(row.nano_completed_events - row.mini_completed_events).toLocaleString('en-US')}} events</small>
+              </div>
+            </td>
+            <td v-if="row.rowspan.mini" :rowspan="row.rowspan.mini" :class="row.mini_status + '-background'">{{row.mini_status}}
+              <small v-if="row.mini_workflow"><br>
+                <a v-if="row.mini_workflow.last_status == 'staging'" :href="row.mini_transferor_link" target="_blank">{{row.mini_workflow.last_status}}</a>
+                <span v-if="row.mini_workflow.last_status != 'staging'">{{row.mini_workflow.last_status}}</span> since {{row.mini_last_status_time_nice}} | {{row.mini_workflow.priority}} | {{row.mini_workflow.type}}</small>
+            </td>
+            <td v-if="row.rowspan.mini" :rowspan="row.rowspan.mini">{{row.mini_completed_events.toLocaleString('en-US')}}
+              <br><small :class="row.mini_fraction >= 85 ? 'high-fraction' : row.mini_fraction >= 50 ? 'medium-fraction' : 'low-fraction'">{{row.mini_fraction.toFixed(2)}}%</small>
+            </td>
+            <td>
+              <div v-if="row.nano.length">
+                <a target="_blank" :href="makeMcMLink(row.nano)">{{row.nano}}</a>
+                <a :href="row.nano_stats_link" target="_blank" title="Open in Stats&#178;"> <img src="stats2.png" style="width: 16px;"> </a>
+              </div>
+            </td>
+            <td :class="row.nano_status + '-background'">{{row.nano_status}}
+              <small v-if="row.nano_workflow"><br>
+                <a v-if="row.nano_workflow.last_status == 'staging'" :href="row.nano_transferor_link" target="_blank">{{row.nano_workflow.last_status}}</a>
+                <span v-if="row.nano_workflow.last_status != 'staging'">{{row.nano_workflow.last_status}}</span> since {{row.nano_last_status_time_nice}} | {{row.nano_workflow.priority}} | {{row.nano_workflow.type}}</small>
+            </td>
+            <td>
+              {{row.nano_completed_events.toLocaleString('en-US')}}
+              <br><small :class="row.nano_fraction >= 85 ? 'high-fraction' : row.nano_fraction >= 50 ? 'medium-fraction' : 'low-fraction'">{{row.nano_fraction.toFixed(2)}}%</small>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="4">
+              <b>SUM</b> 
+            </td>
+            <td colspan="3">
+              <b>{{sumMini.toLocaleString('en-US')}}</b>
+            </td>
+            <td colspan="3">
+              <b>{{sumNano.toLocaleString('en-US')}}</b>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      var app = new Vue({
+        el: '#app',
+        data: {
+          data: [],
+          rows: [],
+          defaultSortOn: 'dataset',
+          sortOn: undefined,
+          sortOrder: 1,
+          sumMini: 0,
+          sumNano: 0,
+          search: {
+            dataset: undefined,
+            root_prepid: undefined,
+            status: undefined,
+            mini: undefined,
+            nano: undefined,
+          },
+          lastUpdate: undefined,
+        },
+        created (){
+          let urlParams = Object.fromEntries(new URLSearchParams(window.location.search));
+          for (let key in this.search) {
+            this.search[key] = urlParams[key] ? urlParams[key] : '';
+          }
+          this.sortOn = urlParams.sort_on || this.defaultSortOn;
+          this.sortOrder = parseInt(urlParams.sort_order || 1);
+
+          const component = this;
+          $.get("data.json", function( data ) {
+            let now = parseInt(Date.now() / 1000)
+            for (let row of data) {
+              row['root_mcm_link'] = component.makeMcMLink(row.root_prepid)
+              row['root_stats_link'] = component.makeStats2Link(row.root_prepid)
+              row['mini_mcm_link'] = component.makeMcMLink(row.mini)
+              row['mini_stats_link'] = component.makeStats2Link(row.mini)
+              row['nano_mcm_link'] = component.makeMcMLink(row.nano)
+              row['nano_stats_link'] = component.makeStats2Link(row.nano)
+              row['root_transferor_link'] = row.root_workflow ? component.makeTransferorLink(row.root_workflow.name) : ""
+              row['mini_transferor_link'] = row.mini_workflow ? component.makeTransferorLink(row.mini_workflow.name) : ""
+              row['nano_transferor_link'] = row.nano_workflow ? component.makeTransferorLink(row.nano_workflow.name) : ""
+              row['root_last_status_time_nice'] = row.root_workflow ? component.secondsToDiff(now - row.root_workflow.last_status_time) : ""
+              row['mini_last_status_time_nice'] = row.mini_workflow ? component.secondsToDiff(now - row.mini_workflow.last_status_time) : ""
+              row['nano_last_status_time_nice'] = row.nano_workflow ? component.secondsToDiff(now - row.nano_workflow.last_status_time) : ""
+              row['mini_fraction'] = (row.mini_total_events && row.mini_completed_events >= 0) ? (row.mini_completed_events*100/row.mini_total_events) : 0
+              row['nano_fraction'] = (row.nano_total_events && row.nano_completed_events >= 0) ? (row.nano_completed_events*100/row.nano_total_events) : 0
+            }
+            component.data = data;
+            component.onSearch();
+          });
+          $.get("update_timestamp.txt", function( data ) {
+            component.lastUpdate = data;
+          });
+        },
+        methods: {
+          onSearch: function() {
+            this.rows = this.applySort(this.applyFilters(this.data));
+            this.calculateSums();
+            this.updateQuery();
+          },
+          onSort: function(attribute) {
+            this.sortOrder = (attribute == this.sortOn) ? this.sortOrder * -1 : 1;
+            this.sortOn = attribute;
+            this.rows = this.applySort(this.rows);
+            this.updateQuery();
+          },
+          calculateSums: function() {
+            let seenMinis = new Set();
+            let seenNanos = new Set();
+            this.sumMini = 0;
+            this.sumNano = 0;
+            for (let row of this.rows) {
+              if (!seenMinis.has(row.mini)) {
+                seenMinis.add(row.mini)
+                this.sumMini += Math.max(row.mini_completed_events, 0);
+              }
+              if (!seenNanos.has(row.nano)) {
+                seenNanos.add(row.nano)
+                this.sumNano += Math.max(row.nano_completed_events, 0);
+              }
+            }
+          },
+          applyFilters: function(rows) {
+            for (let attribute in this.search) {
+              let pattern = this.search[attribute].trim();
+              if (pattern.length && pattern != '-' && pattern != '!') {
+                let negate = false;
+                if (pattern[0] == '-' || pattern[0] == '!') {
+                  negate = true;
+                  pattern = pattern.substring(1);
+                }
+                pattern = pattern.replaceAll('.*', '*').replaceAll(' ', '*').replaceAll('*', '.*').replaceAll(',', '|');
+                const regex = RegExp(pattern, 'i'); // 'i' for case insensitivity
+                const filterFunc = function(entry) {
+                  const value = entry[attribute];
+                  if (value == undefined || value == '') {
+                    // If negating, empty value should be shown
+                    return negate;
+                  }
+                  return regex.test(value) ^ negate;
+                }
+                rows = rows.filter(filterFunc);
+              }
+            }
+            return rows;
+          },
+          applySort: function(rows) {
+            rows = this.multicolumnSort(rows, this.sortOn, this.sortOrder, ['dataset', 'root_prepid', 'mini', 'nano'])
+            this.mergeCells(rows, ['dataset', 'root_prepid', 'mini']);
+            return rows;
+          },
+          updateQuery: function() {
+            let urlParams = Object.fromEntries(new URLSearchParams(window.location.search));
+            urlParams['sort_order'] = this.sortOrder != 1 ? this.sortOrder : undefined;
+            urlParams['sort_on'] = this.sortOn != this.defaultSortOn ? this.sortOn : undefined;
+            for (let attribute in this.search) {
+              let pattern = this.search[attribute];
+              if (pattern == '-' || pattern == '!') {
+                pattern = undefined;
+              }
+              urlParams[attribute] = pattern ? pattern.trim() : undefined;
+            }
+            // Delete all undefined
+            Object.keys(urlParams).forEach(key => urlParams[key] === undefined && delete urlParams[key]);
+            let urlQuery = new URLSearchParams(urlParams).toString();
+            if (urlQuery) {
+              urlQuery = '?' + urlQuery;
+              urlQuery = decodeURI(urlQuery);
+            }
+            let newUrl = window.location.protocol + '//' + window.location.host + window.location.pathname + urlQuery;
+            window.history.replaceState({path: newUrl}, '', newUrl);
+          },
+          multicolumnSort: function(rows, sortOn, sortOrder, attributes) {
+            const statusOrder = ["not_exist", "new", "validation", "defined", "approved", "submitted", "done"]
+            const comparator = function(a, b, attr, order) {
+              if (a[attr] == b[attr]) {
+                return 0;
+              }
+              if (a[attr] === null) { return 1; }
+              if (b[attr] === null) { return -1; }
+              if (attr == "status" || attr == "mini_status" || attr == "nano_status") {
+                return (statusOrder.indexOf(b[attr]) - statusOrder.indexOf(a[attr])) * order ;
+              }
+
+              // Compare normal values
+              if (a[attr] < b[attr]) { return -order; }
+              if (a[attr] > b[attr]) { return order; }
+
+              return 0;
+            }
+
+            attributes = attributes.filter(x => x != sortOn)
+            attributes.unshift(sortOn);
+            rows = rows.sort(function(a, b) {
+              for (let attr of attributes) {
+                let sortResult = comparator(a, b, attr, sortOrder);
+                if (sortResult != 0) { return sortResult;}
+              }
+              return 0;
+            })
+            return rows;
+          },
+          mergeCells: function(list, attributes) {
+            list.forEach(element => {
+              element.rowspan = {};
+              for (let attribute of attributes) {
+                element.rowspan[attribute] = 1;
+              }
+            });
+            for (let i = list.length - 1; i > 0; i--) {
+              let thisEntry = list[i];
+              let otherEntry = list[i - 1];
+              for (let attribute of attributes) {
+                if (thisEntry[attribute] !== otherEntry[attribute]) {
+                  break
+                }
+                otherEntry.rowspan[attribute] += thisEntry.rowspan[attribute];
+                thisEntry.rowspan[attribute] = 0;
+              }
+            }
+          },
+          secondsToDiff: function (s) {
+            var days = Math.floor(s / 86400)
+            var hours = Math.floor((s - (days * 86400)) / 3600)
+            var minutes = Math.round((s - (days * 86400 + hours * 3600)) / 60)
+            if (days == 0 && hours == 0 && minutes == 0) {
+                return parseInt(s) + 's'
+            }
+            var result = ''
+            if (days > 0) {
+                result += days + 'd '
+            }
+            if (hours > 0) {
+                result += hours + 'h '
+            }
+            if (minutes > 0) {
+                result += minutes + 'min'
+            }
+            return result
+          },
+          makeMcMLink(prepid) {
+            return 'https://cms-pdmv.cern.ch/mcm/requests?prepid=' + prepid;
+          },
+          makeStats2Link(prepid) {
+            return 'https://cms-pdmv.cern.ch/stats/?request=' + prepid;
+          },
+          makeTransferorLink(workflow_name) {
+            return 'https://pdmv-pages.web.cern.ch/transferor_stuckor/?workflow=' + workflow_name;
+          }
+        }
+      })
+    </script>
+  </body>
+</html>
