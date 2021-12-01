@@ -103,8 +103,10 @@ if '--debug' in sys.argv:
 rows = []
 for ds_i, ds_name in enumerate(datasets):
     requests = mcm.get('requests', query='prepid=*20UL*GEN*&dataset_name=%s' % (ds_name))
+    if not requests:
+        requests = mcm.get('requests', query='prepid=*Fall18GS*&dataset_name=%s' % (ds_name))
     # filtering out PPD requests
-    requests = [r for r in requests if r['pwg'] != 'PPD']
+    # requests = [r for r in requests if r['pwg'] != 'PPD']
     print('%s/%s dataset %s fetched %s requests' % (ds_i + 1,
                                                     len(datasets),
                                                     ds_name,
